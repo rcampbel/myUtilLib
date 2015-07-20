@@ -1,7 +1,8 @@
 define([module], function(module) {
 
 	var privateMembers = {
-		acceptableBindEvents : ['click']
+		acceptableBindEvents : ['click'],
+		keySplitRegex : new Regex(/^\s*(\w*?)\s+(.*)$/)
 	};
 
 	describe('module', function() {
@@ -21,11 +22,73 @@ define([module], function(module) {
 			});
 
 			describe("splitEventKey", function() {
+				var expectedResponse = null,
+					responseTest = function (testSettings, testExpectedResponse) {
+						var response = module.splitEventKey(testSettings);
+						expect(response).toEqual(testExpectedResponse);
+					};
+
+				beforeEach(function() {
+					expectedResponse = {
+						type: null,
+						selector: null
+					};
+				});
+
 				it("which is a function", function(){
 					expect(module.splitEventKey).toEqual(jasmine.any(Function));
 				});
 
+				it('which returns an object', function() {
+					responseTest(undefined, jasmine.any(Object));
+				});
 
+				describe('when supplied an eventKey', function() {
+					it('that is undfeind, it returns an object with the properties type and selector that is null', function() {
+						expectedResponse.type = null;
+						expectedResponse.selector = null;
+						responseTest(undefined, expectedResponse);
+					});
+					
+					it('that is null, it returns an object with the properties type and selector that is null', function() {
+						expectedResponse.type = null;
+						expectedResponse.selector = null;
+						responseTest(null, expectedResponse);
+					});
+
+					it('that is not a string, it returns an object with the properties type and selector that is null', function() {
+						expectedResponse.type = null;
+						expectedResponse.selector = null;
+						responseTest([], expectedResponse);
+					});
+
+					describe('that is a string', function() {
+						it('which is empty, it returns an object with the properties type and selector that is null', function() {
+							expectedResponse.type = null;
+							expectedResponse.selector = null;
+							responseTest("", expectedResponse);
+						});	
+
+						it('which is just whitespace, it returns an object with the properties type and selector that is null', function() {
+							expectedResponse.type = null;
+							expectedResponse.selector = null;
+							responseTest(" 	 ", expectedResponse);
+						});	
+
+						it('which contains just the event name, it returns an object with the property type with the value set to the event name and selector which is null', function() {
+							expectedResponse = "Injected";
+							expectedResponse.selector = null;
+							responseTest("Injected", expectedResponse);							
+						});
+
+
+						it('which contains an event name and selector, it returns an object with the property type with the value set to the event name and selector which is supplied selector', function() {
+							expectedResponse = "Injected";
+							expectedResponse.selector = "monkey";
+							responseTest("Injected monkey", expectedResponse);							
+						});						
+					});
+				});
 			});
 
 			describe("isValidBindEventType", function() {
