@@ -42,5 +42,5 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-build/node_modules/
-build/coverage/
+naturalEventBinding/build/node_modules/
+naturalEventBinding/build/coverage/
