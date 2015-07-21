@@ -1,30 +1,28 @@
-define([module], function(module) {
-
 	var privateMembers = {
 		acceptableBindEvents : ['click'],
-		keySplitRegex : new Regex(/^\s*(\w*?)\s+(.*)$/)
+		keySplitRegex : new RegExp(/^\s*(\w*?)(\s+(.*))?$/)
 	};
 
-	describe('module', function() {
+	describe('naturalEventBinding', function() {
 		it('is defined', function() {
-			expect(module).toBeDefined();
+			expect(naturalEventBinding).toBeDefined();
 		});
 
 		it('is an object', function() {
-			expect(module).toEqual(jasmine.any(Object));
+			expect(naturalEventBinding).toEqual(jasmine.any(Object));
 		});
 
 		describe('that has the properties', function() {
 			describe("bindMyEvents", function() {
 				it("which is a function", function(){
-					expect(module.bindMyEvents).toEqual(jasmine.any(Function));
+					expect(naturalEventBinding.bindMyEvents).toEqual(jasmine.any(Function));
 				});
 			});
 
 			describe("splitEventKey", function() {
 				var expectedResponse = null,
 					responseTest = function (testSettings, testExpectedResponse) {
-						var response = module.splitEventKey(testSettings);
+						var response = naturalEventBinding.splitEventKey(testSettings);
 						expect(response).toEqual(testExpectedResponse);
 					};
 
@@ -36,7 +34,7 @@ define([module], function(module) {
 				});
 
 				it("which is a function", function(){
-					expect(module.splitEventKey).toEqual(jasmine.any(Function));
+					expect(naturalEventBinding.splitEventKey).toEqual(jasmine.any(Function));
 				});
 
 				it('which returns an object', function() {
@@ -76,14 +74,14 @@ define([module], function(module) {
 						});	
 
 						it('which contains just the event name, it returns an object with the property type with the value set to the event name and selector which is null', function() {
-							expectedResponse = "Injected";
+							expectedResponse.type = "Injected";
 							expectedResponse.selector = null;
 							responseTest("Injected", expectedResponse);							
 						});
 
 
 						it('which contains an event name and selector, it returns an object with the property type with the value set to the event name and selector which is supplied selector', function() {
-							expectedResponse = "Injected";
+							expectedResponse.type = "Injected";
 							expectedResponse.selector = "monkey";
 							responseTest("Injected monkey", expectedResponse);							
 						});						
@@ -93,12 +91,14 @@ define([module], function(module) {
 
 			describe("isValidBindEventType", function() {
 				var falseExpected = function (testSettings){
-						var resp = module.isValidBindEventType(testSettings);
+						var resp = naturalEventBinding.isValidBindEventType(testSettings);
 						expect(resp).toBe(false);
 					},
 					trueExpected = function (testSettings){
-						var resp = module.isValidBindEventType(testSettings);
-						expect(resp).toBe(true);
+						it('is '+ testSettings, function() {
+							var resp = naturalEventBinding.isValidBindEventType(testSettings);
+							expect(resp).toBe(true);
+						});
 					},
 					response = null;
 
@@ -107,11 +107,11 @@ define([module], function(module) {
 				});
 				
 				it("which is a function", function(){
-					expect(module.isValidBindEventType).toEqual(jasmine.any(Function));
+					expect(naturalEventBinding.isValidBindEventType).toEqual(jasmine.any(Function));
 				});
 
 				it('which returns a boolean', function() {
-					response = module.isValidBindEventType();
+					response = naturalEventBinding.isValidBindEventType();
 					expect(response).toEqual(jasmine.any(Boolean));	
 				});
 
@@ -135,9 +135,11 @@ define([module], function(module) {
 					};
 				});
 
-				describe('which retruns true when the padded in eventType', function() {
-					for (var i = privateMembers.acceptableBindEvents.length - 1; i >= 0; i--) {
-						trueExpected(privateMembers.acceptableBindEvents[i] + "" + i);
+				describe('which retruns true when the passed in eventType', function() {
+					for (var i = privateMembers.acceptableBindEvents.length; i >= 0; i--) {
+						it('is '+ privateMembers.acceptableBindEvents[i], function() {
+							trueExpected(privateMembers.acceptableBindEvents[i]);
+						});
 					};
 				});
 			});
@@ -154,26 +156,26 @@ define([module], function(module) {
 					settings = null;
 					spyOn(jQuery.fn,"on");
 					onNotCalled = function(testSettings) {
-						module.bindEvent(testSettings);
+						naturalEventBinding.bindEvent(testSettings);
 						expect(jQuery.fn.on).not.toHaveBeenCalled();
 					};
 					onNotCalledWithFour = function(testSettings){
-						module.bindEvent(testSettings);
-						expect(jQuery.fn.on).not.toHaveBeenCalledWith(testSettings.type, testSettings.selector, testSettings, module.handleEvent);
+						naturalEventBinding.bindEvent(testSettings);
+						expect(jQuery.fn.on).not.toHaveBeenCalledWith(testSettings.type, testSettings.selector, testSettings, naturalEventBinding.handleEvent);
 					};
 					onCalledWithThree = function(testSettings){
-						module.bindEvent(testSettings);
-						expect(jQuery.fn.on).toHaveBeenCalledWith(testSettings.type, testSettings, module.handleEvent);
+						naturalEventBinding.bindEvent(testSettings);
+						expect(jQuery.fn.on).toHaveBeenCalledWith(testSettings.type, testSettings, naturalEventBinding.handleEvent);
 					};
-					onCalledWithThree = function(testSettings){
-						module.bindEvent(testSettings);
-						expect(jQuery.fn.on).toHaveBeenCalledWith(testSettings.type, testSettings.selector, testSettings, module.handleEvent);
+					onCalledWithFour = function(testSettings){
+						naturalEventBinding.bindEvent(testSettings);
+						expect(jQuery.fn.on).toHaveBeenCalledWith(testSettings.type, testSettings.selector, testSettings, naturalEventBinding.handleEvent);
 					};
 				});
 
 
 				it("which is a function", function(){
-					expect(module.bindEvent).toEqual(jasmine.any(Function));
+					expect(naturalEventBinding.bindEvent).toEqual(jasmine.any(Function));
 				});
 
 				describe('when passed settings that', function() {
@@ -214,19 +216,19 @@ define([module], function(module) {
 								});
 
 								it('then isValidBindEventType is called to check the type', function() {
-									module.bindEvent(settings);
-									spyOn(module, "isValidBindEventType").andReturn(false);
-									expect().toHaveBeenCalledWith(settings.type);
+									naturalEventBinding.bindEvent(settings);
+									spyOn(naturalEventBinding, "isValidBindEventType").and.returnValue(false);
+									expect().toHaveBeenCalledWith(settings.type); 
 								});
 
 								it('that is not an invalid event type, then jQuery does not bind the event', function() {
-									spyOn(module, "isValidBindEventType").andReturn("false");
+									spyOn(naturalEventBinding, "isValidBindEventType").and.returnValue(false);
 									onNotCalled(settings);
 								});
 								
 								describe('that is a valid event type', function() {
 									beforeEach(function() {
-										spyOn(module, "isValidBindEventType").andReturn(true);
+										spyOn(naturalEventBinding, "isValidBindEventType").and.returnValue(true);
 									});
 
 									describe('and settings.message', function() {
@@ -322,9 +324,9 @@ define([module], function(module) {
 				});
 			});
 
-			describe("handleEvent", function() {
+			xdescribe("handleEvent", function() {
 				it("which is a function", function(){
-					expect(module.handleEvent).toEqual(jasmine.any(Function));
+					expect(naturalEventBinding.handleEvent).toEqual(jasmine.any(Function));
 				});
 
 				describe('when event', function() {
@@ -339,19 +341,19 @@ define([module], function(module) {
 						spyOn(jQuery.fn, "trigger");
 						settings = null;
 						triggerNotCalled = function(testSettings) {
-							module.handleEvent(testSettings);
+							naturalEventBinding.handleEvent(testSettings);
 							expect(jQuery.fn.trigger).not.toHaveBeenCalled();
 						};
 						triggerCalledWithOne = function(testSettings) {
-							module.handleEvent(testSettings);
+							naturalEventBinding.handleEvent(testSettings);
 							expect(jQuery.fn.trigger).toHaveBeenCalledWith(testSettings.data.message);
 						};
 						triggerCalledWithTwo = function(testSettings) {
-							module.handleEvent(testSettings);
+							naturalEventBinding.handleEvent(testSettings);
 							expect(jQuery.fn.trigger).toHaveBeenCalledWith(testSettings.data.message, testSettings.data.data);
 						};
 						triggerNotCalledWithTow = function(testSettings) {
-							module.handleEvent(testSettings);
+							naturalEventBinding.handleEvent(testSettings);
 							expect(jQuery.fn.trigger).not.toHaveBeenCalledWith(testSettings.data.message, testSettings.data.data);	
 						}
 					});
@@ -423,7 +425,7 @@ define([module], function(module) {
 											describe('that is not empty and not just whitespace', function() {
 												it('then jquery triggers an event', function() {
 													settings.data.message = "monkey";
-													module.handleEvent(settings);
+													naturalEventBinding.handleEvent(settings);
 													expect(jQuery.fn.trigger).toHaveBeenCalled();
 												});
 
@@ -514,6 +516,3 @@ define([module], function(module) {
 
 		});
 	});
-
-
-});
