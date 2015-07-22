@@ -1,33 +1,50 @@
+define([], function () {
+	"use strict";
 
-var naturalEventPrivateMembers = {
+var privateMembers = {
 		acceptableBindEvents : ['click'],
 		keySplitRegex : new RegExp(/^\s*(\w*?)(\s+(.*))*$/),
-		jq_document : $("document")
+		eventBus : $({})
 	},
-	naturalEventBinding = {
-		bindMyEvents : function (module) {
+	publicMembers = {
+		bindEvents : function (settings) {
 			var key = null,
+				keyValue = null,
 				defalutEventObj = {
-					type : null,
-					selector : null,
-					message : null,
-					data : null
+					"type" : null,
+					"message" : null,
+					"selector" : null,
+					"scope" : null,
+					"data" : {}
 				},
-				eventObj;
+				eventObj,
+				response = false;
 
-			if (typeof module === "object" && module !== null &&
-				module.hasOwnProperty("bindEvents") && typeof module.bindEvents === "object" && module.bindEvents !== null,
-				module.hasOwnProperty("scope") && typeof module.scope === "string" && module.scope.trim().lenght >= 1) {
-					for (key in module.bindEvents) {
-						eventObj = naturalEventBinding.splitEventKey(key);
-						eventObj = $.extend({}, eventObj, defalutEventObj);
-						if (typeof eventObj === "object" && eventObj !== null &&
-							eventObj.hasOwnProperty("type") && typeof eventObj.type === "string" && eventObj.type.trim().length >= 1) {
-							eventObj.data = module.bindEvents[key];
-							naturalEventPrivateMembers.bindEvent(eventObj);
+			if (typeof settings === "object" && settings !== null &&
+			    settings.hasOwnProperty("module") && typeof settings.module === "object" && settings.module !== null &&
+			    settings.module.hasOwnProperty("bindEvents") && typeof settings.module.bindEvents === "object" && settings.module.bindEvents !== null) {
+
+				defalutEventObj.scope = $(settings.scope);
+
+				for (key in settings.module.bindEvents) {
+					if (settings.module.bindEvents.hasOwnProperty(key)) {
+
+						eventObj = publicMembers.splitEventKey(key);
+						keyValue = publicMembers.normalizeMessageObject(settings.module.bindEvents[key]);
+
+						eventObj = $.extend({}, defalutEventObj, eventObj, keyValue);
+
+						if (eventObj.hasOwnProperty("type") && typeof eventObj.type === "string" && eventObj.type.trim().length >= 1 &&
+						    eventObj.hasOwnProperty("message") && typeof eventObj.message === "string" && eventObj.message.trim().length >= 1){
+							publicMembers.bindEvent(eventObj);
 						}
+
 					}
 				}
+
+			}
+
+			return response;
 		},
 		splitEventKey : function (eventKey) {
 			var event = {
@@ -38,7 +55,7 @@ var naturalEventPrivateMembers = {
 
 			if (typeof eventKey === "string" && eventKey.trim().length >= 1) {
 
-				match = naturalEventPrivateMembers.keySplitRegex.exec(eventKey);
+				match = privateMembers.keySplitRegex.exec(eventKey);
 				if (typeof match !== "undefined" && match !== null && match instanceof Array && match.length >= 1) {
 					match.shift(); //throw away the first since it is the full match and we just want the  first and second part
 					event.type = match.shift() || null;
@@ -49,43 +66,73 @@ var naturalEventPrivateMembers = {
 
 			return event;
 		},
-		isValidBindEventType : function (evnetType) {
+		isValidBindEventType : function (eventType) {
 			var response = false;
 
-			if (typeof eventType === "string" && eventType.trim().length >= 1 && 
-				naturalEventPrivateMembers.acceptableBindEvents.indexOf(eventType) >= 0) {
+			if (typeof eventType === "string" && eventType.trim().length >= 1 &&
+				privateMembers.acceptableBindEvents.indexOf(eventType) >= 0) {
 				response = true;
 			}
 
 			return response;
 		},
 		bindEvent : function (settings) {
-			if (typeof settings === "object" && settings !== null &&
-				settings.hasOwnProperty("type") && typeof settings.type === "string" && settings.type.trim().length >= 1 &&
-				naturalEventBinding.isValidBindEventType(settings.type) && 
-				settings.hasOwnProperty("message") && typeof settings.message === "string" && settings.message.trim().length >= 1) {
 
-				if (settings.hasOwnProperty("selector") && typeof settings.selector === "string" && settings.selector.trim().length >= 1) {
-					naturalEventPrivateMembers.jq_document.on(settings.type, settings.selector, settings, naturalEventBinding.handleEvent);
-				} else {
-					naturalEventPrivateMembers.jq_document.on(settings.type, settings, naturalEventBinding.handleEvent);
+			var jq_scope = null,
+				mySettings = {
+					"type" : null,
+					"message" : null,
+					"selector" : null,
+					"scope" : document,
+					"data" : {}
+				};
+
+			$.extend(mySettings, settings);
+
+			if (typeof mySettings.type === "string" && mySettings.type.trim().length >= 1 && publicMembers.isValidBindEventType(mySettings.type.trim()) &&
+			    typeof mySettings.message === "string" && mySettings.message.trim().length >= 1) {
+
+				if (typeof mySettings.data !== "object" || mySettings.data === null) {
+					mySettings.data = {};
+				}
+
+				mySettings.data.message = mySettings.message;
+
+				jq_scope = $(mySettings.scope);
+
+				if (jq_scope.length >= 1){
+					jq_scope.on(mySettings.type, mySettings.selector, mySettings.data, publicMembers.handleEvent);
 				}
 			}
 		},
 		handleEvent: function(event) {
+			if (typeof event === "object" && event !== null && event instanceof jQuery.Event &&
+			    event.hasOwnProperty("data") && typeof event.data === "object" && event.data !== null &&
+			    event.data.hasOwnProperty("message") && typeof event.data.message === "string" && event.data.message.trim().length >= 1) {
+				event.type = event.data.message.trim();
+				privateMembers.eventBus.trigger(event);
+			}
+		},
+		normalizeMessageObject : function (keyValue) {
+			var response = {};
 
-			if (typeof event === "object" && event !== null &&
-				event.hasOwnProperty("data") && typeof event.data === "object" && event.data !== null &&
-				event.data.hasOwnProperty("message") && typeof event.data.message === "string" && event.data.message.trim().lenght >= 1) {
-				
-				if (event.data.hasOwnProperty("data") && (
-					(typeof event.data.data === "object" && event.data.data !== null) ||
-					(typeof event.data.data !== "undefined" && evnet.data.data !== null && event.data.data instanceof Array)
-					))  {
-					$(ANF).trigger(event.data.message, event.data.data);	
-				} else {
-					$(ANF).trigger(event.data.message);
+			if (typeof keyValue === "string" && keyValue.trim().length >=1) {
+				response.message = keyValue.trim();
+			} else if (typeof keyValue === "object" && keyValue !== null) {
+
+			  	if (keyValue.hasOwnProperty("message") && typeof keyValue.message === "string" && keyValue.message.trim().length >= 1) {
+					response.message = keyValue.message.trim();
+				}
+
+				if (keyValue.hasOwnProperty("data") && typeof keyValue.data !== "undefined") {
+					response.data = keyValue.data;
 				}
 			}
+
+			return response;
 		}
 	};
+
+	return publicMembers;
+
+});
